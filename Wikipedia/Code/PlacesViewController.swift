@@ -83,6 +83,13 @@ class PlacesViewController: ViewController, UISearchBarDelegate, ArticlePopoverV
         title = CommonStrings.placesTabTitle
         extendedLayoutIncludesOpaqueBars = true
         edgesForExtendedLayout = UIRectEdge.all
+        NotificationCenter.default.addObserver(self, selector: #selector(checkDeepLinkLocation), name: UIApplication.didBecomeActiveNotification, object: nil)
+        NotificationCenter.default.addObserver(self, selector: #selector(checkDeepLinkLocation), name: NSNotification.placesDeeplink, object: nil)
+    }
+    
+    @objc func checkDeepLinkLocation() {
+        guard let location = DeepLinkManager.shared.consumeLocation() else { return }
+        self.zoomAndPanMapView(toLocation: location)
     }
 
     // MARK: - Search
@@ -207,6 +214,7 @@ class PlacesViewController: ViewController, UISearchBarDelegate, ArticlePopoverV
         overlaySliderPanGestureRecognizer = panGR
 
         self.view.layoutIfNeeded()
+        
     }
     
     override func viewWillAppear(_ animated: Bool) {
@@ -248,8 +256,12 @@ class PlacesViewController: ViewController, UISearchBarDelegate, ArticlePopoverV
         
         locationManager.startMonitoringLocation()
         mapView.showsUserLocation = true
+        
+        guard let location = DeepLinkManager.shared.consumeLocation() else { return }
+        self.zoomAndPanMapView(toLocation: location)
     }
 
+    
     override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
         NotificationCenter.default.removeObserver(self, name: UIWindow.keyboardWillShowNotification, object: nil)

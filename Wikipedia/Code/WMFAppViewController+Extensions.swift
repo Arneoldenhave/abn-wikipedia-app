@@ -12,6 +12,17 @@ extension Notification.Name {
     static let showErrorBannerNSErrorKey = Notification.Name.showErrorBannerNSErrorKey
 }
 
+
+@objc extension NSNotification {
+    public static let placesDeeplink = Notification.Name.placesDeeplink
+    public static let placesDeeplinkKey = "places"
+}
+
+
+extension Notification.Name {
+    static let placesDeeplink = Notification.Name("WMFPlacesDeeplink")
+}
+
 extension WMFAppViewController {
 
     // MARK: - Language Variant Migration Alerts

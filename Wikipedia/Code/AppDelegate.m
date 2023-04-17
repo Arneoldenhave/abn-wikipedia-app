@@ -85,9 +85,18 @@ static NSString *const WMFBackgroundDatabaseHousekeeperTaskIdentifier = @"org.wi
     [[UIApplication sharedApplication] registerForRemoteNotifications];
     [UNUserNotificationCenter currentNotificationCenter].delegate = vc; // this needs to be set before the end of didFinishLaunchingWithOptions:
     [vc launchAppInWindow:self.window waitToResumeApp:self.appNeedsResume];
+    
+
+    
+
     self.appViewController = vc;
 
     [self updateDynamicIconShortcutItems];
+    
+    CLLocation *location = [[CLLocation alloc] initWithLatitude:50.123123123 longitude:53.123123123];
+    NSDictionary *userInfo = @{@"location": location};
+    NSNotification *notification = [NSNotification notificationWithName:@"places" object:nil userInfo:userInfo];
+    [[NSNotificationCenter defaultCenter] postNotification:notification];
 
     return YES;
 }
@@ -165,8 +174,49 @@ static NSString *const WMFBackgroundDatabaseHousekeeperTaskIdentifier = @"org.wi
 - (BOOL)application:(UIApplication *)app
             openURL:(NSURL *)url
             options:(NSDictionary<NSString *, id> *)options {
+    
     NSUserActivity *activity = [NSUserActivity wmf_activityForWikipediaScheme:url] ?: [NSUserActivity wmf_activityForURL:url];
-    if (activity) {
+    
+    
+    
+    
+    NSString *query = url.query;
+    
+    if ([url.host isEqualToString:@"places"]) {
+        NSURLComponents *components = [NSURLComponents componentsWithURL:url resolvingAgainstBaseURL:NO];
+        NSArray<NSURLQueryItem *> *queryItems = components.queryItems;
+        NSMutableDictionary *queryParameters = [NSMutableDictionary dictionary];
+        for (NSURLQueryItem *queryItem in queryItems) {
+            NSString *name = queryItem.name;
+            NSString *value = queryItem.value;
+            queryParameters[name] = value;
+        }
+        NSString *valueForLatitude = [queryParameters objectForKey:@"lat"];
+        NSString *valueForLongitude = [queryParameters objectForKey:@"long"];
+        // Use if statement with early return
+        if (valueForLatitude == nil || valueForLongitude == nil) {
+            return NO;
+        }
+        
+        float latitude = [valueForLatitude floatValue];
+        float longitude = [valueForLongitude floatValue];
+        
+        if (latitude == 0.0 && ![valueForLatitude isEqual: @"0.0"]) {
+            return NO;
+        }
+
+        if (longitude == 0.0 && ![valueForLongitude  isEqual: @"0.0"]) {
+            return NO;
+        }
+        CLLocation *location = [[CLLocation alloc] initWithLatitude:latitude longitude:longitude];
+        
+        NSDictionary *data = @{NSNotification.placesDeeplinkKey:location};
+        [[NSNotificationCenter defaultCenter] postNotificationName:NSNotification.placesDeeplink object:data userInfo:data];
+
+//        [[DeepLinkManager shared] setLocation: location];
+        return  YES;
+        
+    } else if (activity) {
         [self.appViewController showSplashView];
         BOOL result = [self.appViewController processUserActivity:activity
                                                          animated:NO
@@ -182,6 +232,7 @@ static NSString *const WMFBackgroundDatabaseHousekeeperTaskIdentifier = @"org.wi
         [self resumeAppIfNecessary];
         return NO;
     }
+    return NO;
 }
 
 - (void)applicationWillResignActive:(UIApplication *)application {
