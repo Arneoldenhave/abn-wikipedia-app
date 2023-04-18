@@ -255,7 +255,12 @@ NSString *const WMFLanguageVariantAlertsLibraryVersion = @"WMFLanguageVariantAle
                                                  selector:@selector(showErrorBanner:)
                                                      name:NSNotification.showErrorBanner
                                                    object:nil];
-
+    
+    [[NSNotificationCenter defaultCenter] addObserver:self
+                                                 selector:@selector(placesDeeplink:)
+                                                     name: NSNotification.placesDeeplink
+                                                   object:nil];
+    
     [self setupReadingListsHelpers];
     self.editHintController = [[WMFEditHintController alloc] init];
     self.talkPageReplyHintController = [[WMFTalkPageReplyHintController alloc] init];
@@ -263,6 +268,17 @@ NSString *const WMFLanguageVariantAlertsLibraryVersion = @"WMFLanguageVariantAle
 
     self.navigationItem.backButtonDisplayMode = UINavigationItemBackButtonDisplayModeGeneric;
 }
+
+- (void) placesDeeplink:(NSNotification *)notification {
+    NSDictionary *data = notification.userInfo;
+    id location = data[NSNotification.placesDeeplinkKey];
+    
+    if ([location isKindOfClass:[CLLocation class]]) {
+        [[DeepLinkManager shared] setLocation:location];
+        [self setSelectedIndex:WMFAppTabTypePlaces];
+    }
+}
+
 
 - (UIStatusBarStyle)preferredStatusBarStyle {
     return self.theme.preferredStatusBarStyle;
